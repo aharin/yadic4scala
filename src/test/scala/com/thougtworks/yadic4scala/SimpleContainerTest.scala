@@ -44,7 +44,7 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
     val container = new SimpleContainer
     container.add(classOf[MyThingWithReverseConstructor])
 
-    var myThing: MyThingWithReverseConstructor = container.resolveType(classOf[MyThingWithReverseConstructor])
+    val myThing: MyThingWithReverseConstructor = container.resolveType(classOf[MyThingWithReverseConstructor])
 
     myThing.dependency should be(null)
   }
@@ -159,7 +159,7 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
     container.add(classOf[MyDependency])
     container.add(classOf[ThingWithNoDependencies])
 
-    var myThing = container.resolveType(classOf[MyDependency])
+    val myThing = container.resolveType(classOf[MyDependency])
     myThing should be(anInstanceOf[MyDependency])
   }
 
@@ -169,11 +169,12 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
     container.add(classOf[MyDependency])
     container.add(classOf[ThingWithNoDependencies])
 
-    var myThing = container.resolveType(classOf[MyThing])
+    val myThing = container.resolveType(classOf[MyThing])
 
     myThing.dependency should be(anInstanceOf[MyDependency])
     myThing.dependency.dependency should be(anInstanceOf[ThingWithNoDependencies])
   }
+
   test("shouldResolveWithDependenciesInAnyOrder") {
     val container = new SimpleContainer
     container.add(classOf[MyDependency])
