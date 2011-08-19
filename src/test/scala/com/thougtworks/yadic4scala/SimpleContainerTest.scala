@@ -1,24 +1,23 @@
 package com.thougtworks.yadic4scala
 
-import org.hamcrest.CoreMatchers._
-import org.junit.Assert.{assertThat, assertTrue, fail, assertSame}
-import org.junit.{Test}
 import com.thougtworks.yadic4scala.SimpleContainerTest._
 import java.util.ArrayList
 import java.util.List
 import java.util.concurrent.{TimeUnit, Future, Executors, Callable}
+import org.scalatest.FunSuite
+import org.scalatest.matchers.ShouldMatchers
 
-class SimpleContainerTest {
-  @Test (expected = classOf[ContainerException])
-  def resolveShouldThrowExceptionIfConstructorIsNotSatifiable {
+class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatchers {
+
+  test("resolveShouldThrowExceptionIfConstructorIsNotSatifiable") {
     val container = new SimpleContainer
     container.add(classOf[MyThing])
-    container.resolve(classOf[MyThing])
-    fail("should have thrown exception")
+    evaluating {
+      container.resolve(classOf[MyThing])
+    } should produce[ContainerException]
   }
 
-  @Test
-  def shouldOnlyCallCreationLambdaOnceEvenFromDifferentThreads {
+  test("shouldOnlyCallCreationLambdaOnceEvenFromDifferentThreads") {
     var count = 0
     val container = new SimpleContainer
 
@@ -33,26 +32,24 @@ class SimpleContainerTest {
     val collection = new ArrayList[Callable[Thing]]
     collection.add(new Creator(container))
     collection.add(new Creator(container))
-    val results:List[Future[Thing]] = service.invokeAll(collection)
+    val results: List[Future[Thing]] = service.invokeAll(collection)
     service.shutdown()
     service.awaitTermination(50, TimeUnit.MILLISECONDS)
 
-    assertThat( count, is(1) )
-    assertSame( results.get(0).get, results.get(1).get)
+    count should equal(1)
+    results.get(0).get should be theSameInstanceAs results.get(1).get
   }
 
-  @Test
-  def shouldResolveUsingConstructorWithMostDependenciesThatIsSatisfiable {
+  test("shouldResolveUsingConstructorWithMostDependenciesThatIsSatisfiable") {
     val container = new SimpleContainer
     container.add(classOf[MyThingWithReverseConstructor])
 
     var myThing: MyThingWithReverseConstructor = container.resolveType(classOf[MyThingWithReverseConstructor])
 
-    assertThat(myThing.dependency, is(nullValue(classOf[Thing])))
+    myThing.dependency should be(null)
   }
 
-  @Test
-  def shouldChainContainersThroughMissingAction {
+  test("shouldChainContainersThroughMissingAction") {
     val parent = new SimpleContainer
     parent.add(classOf[Thing], classOf[ThingWithNoDependencies])
 
@@ -60,129 +57,113 @@ class SimpleContainerTest {
 
     val thing = child.resolveType(classOf[Thing])
 
-    assertThat(thing, is(instanceOf(classOf[ThingWithNoDependencies])))
+    thing should be(anInstanceOf[ThingWithNoDependencies])
   }
 
-  @Test
-  def shouldResolveByType {
+  test("shouldResolveByType") {
     val container = new SimpleContainer
     container.add(classOf[Thing], classOf[ThingWithNoDependencies])
 
     val thing = container.resolveType(classOf[Thing])
 
-    assertThat(thing, is(instanceOf(classOf[ThingWithNoDependencies])))
+    thing should be(anInstanceOf[ThingWithNoDependencies])
   }
 
-  @Test
-  def shouldCallMissingMethodWhenItemNotFound {
+  test("shouldCallMissingMethodWhenItemNotFound") {
     var wasCalled = false
-    val container = new SimpleContainer((_) =>
-            {
-              wasCalled = true
-              return null
-            })
+    val container = new SimpleContainer((_) => {
+      wasCalled = true
+      null
+    })
     container.resolveType(classOf[Thing])
 
-    assertTrue(wasCalled)
+    wasCalled should be(true)
   }
 
-  @Test
-  def shouldOnlyCallCreationLambdaOnce {
+  test("shouldOnlyCallCreationLambdaOnce") {
     var count = 0
     val container = new SimpleContainer
 
     container.add(classOf[Thing], () => {
       count = count + 1
-      return new ThingWithNoDependencies
+      new ThingWithNoDependencies
     })
 
     container.resolveType(classOf[Thing])
-    val thing = container.resolveType(classOf[Thing])
-
-    assertThat(count, is(equalTo(1)))
+    container.resolveType(classOf[Thing])
+    count should be(1)
   }
 
-  @Test
-  def shouldDecorateAnExistingComponent {
+  test("shouldDecorateAnExistingComponent") {
     val container = new SimpleContainer
     container.add(classOf[Thing], classOf[ThingWithNoDependencies])
     container.decorate(classOf[Thing], classOf[DecoratedThing])
 
-    var thing = container.resolveType(classOf[Thing])
+    val thing = container.resolveType(classOf[Thing])
 
-    assertThat(thing, is(instanceOf(classOf[DecoratedThing])))
-    assertThat(thing.dependency, is(instanceOf(classOf[ThingWithNoDependencies])))
+    thing should be(anInstanceOf[DecoratedThing])
+    thing.dependency should be(anInstanceOf[ThingWithNoDependencies])
   }
 
-  @Test
-  def shouldAddAndReolveByConcrete {
+  test("shouldAddAndReolveByConcrete") {
     val container = new SimpleContainer
     container.add(classOf[Thing], () => new ThingWithNoDependencies)
 
-    var thing = container.resolveType(classOf[Thing])
-
-    assertThat(thing, is(instanceOf(classOf[ThingWithNoDependencies])))
+    val thing = container.resolveType(classOf[Thing])
+    thing should be(anInstanceOf[ThingWithNoDependencies])
   }
 
-  @Test
-  def shouldAddAndResolveByInterface {
+  test("shouldAddAndResolveByInterface") {
     val container = new SimpleContainer
     container.add(classOf[Thing], classOf[ThingWithNoDependencies])
 
-    var thing = container.resolveType(classOf[Thing])
+    val thing = container.resolveType(classOf[Thing])
 
-    assertThat(thing, is(instanceOf(classOf[ThingWithNoDependencies])))
+    thing should be(anInstanceOf[ThingWithNoDependencies])
   }
 
-  @Test (expected = classOf[ContainerException])
-  def shouldThrowExceptionIfAddSameTypeTwice {
+  test("shouldThrowExceptionIfAddSameTypeTwice") {
     val container = new SimpleContainer
     container.add(classOf[MyThing])
-    container.add(classOf[MyThing])
-    fail("should have thrown exception")
+    evaluating {
+      container.add(classOf[MyThing])
+    } should produce[ContainerException]
   }
 
-  @Test (expected = classOf[ContainerException])
-  def resolveShouldThrowExceptionIfTypeNotInContainer {
+  test("resolveShouldThrowExceptionIfTypeNotInContainer") {
     val container = new SimpleContainer
-    container.resolveType(classOf[MyThing])
-    fail("should have thrown exception")
+    evaluating {
+      container.resolveType(classOf[MyThing])
+    } should produce[ContainerException]
   }
 
-  @Test
-  def shouldAddAndResolveByClass {
+  test("shouldAddAndResolveByClass") {
     val container = new SimpleContainer
     container.add(classOf[ThingWithNoDependencies])
 
-    var result = container.resolveType(classOf[ThingWithNoDependencies])
-
-    assertThat(result, is(instanceOf(classOf[ThingWithNoDependencies])))
+    val result = container.resolveType(classOf[ThingWithNoDependencies])
+    result should be(anInstanceOf[ThingWithNoDependencies])
   }
 
-  @Test
-  def resolveShouldReturnSameInstanceWhenCalledTwice {
+  test("resolveShouldReturnSameInstanceWhenCalledTwice") {
     val container = new SimpleContainer
     container.add(classOf[ThingWithNoDependencies])
 
-    var result1 = container.resolveType(classOf[ThingWithNoDependencies])
-    var result2 = container.resolveType(classOf[ThingWithNoDependencies])
+    val result1 = container.resolveType(classOf[ThingWithNoDependencies])
+    val result2 = container.resolveType(classOf[ThingWithNoDependencies])
 
-    assertSame(result1, result2)
+    result1 should be theSameInstanceAs result2
   }
-
-  @Test
-  def shouldResolveDependencies {
+  test("shouldResolveDependencies") {
     val container = new SimpleContainer
     container.add(classOf[MyDependency])
     container.add(classOf[ThingWithNoDependencies])
 
     var myThing = container.resolveType(classOf[MyDependency])
-
-    assertThat(myThing.dependency, is(instanceOf(classOf[ThingWithNoDependencies])))
+    myThing should be(anInstanceOf[MyDependency])
   }
 
-  @Test
-  def shouldRecursivelyResolveDependencies {
+  test("shouldRecursivelyResolveDependencies") {
     val container = new SimpleContainer
     container.add(classOf[MyThing])
     container.add(classOf[MyDependency])
@@ -190,38 +171,44 @@ class SimpleContainerTest {
 
     var myThing = container.resolveType(classOf[MyThing])
 
-    assertThat(myThing.dependency, is(instanceOf(classOf[MyDependency])))
-    assertThat(myThing.dependency.dependency, is(instanceOf(classOf[ThingWithNoDependencies])))
+    myThing.dependency should be(anInstanceOf[MyDependency])
+    myThing.dependency.dependency should be(anInstanceOf[ThingWithNoDependencies])
   }
-
-  @Test
-  def shouldResolveWithDependenciesInAnyOrder {
+  test("shouldResolveWithDependenciesInAnyOrder") {
     val container = new SimpleContainer
     container.add(classOf[MyDependency])
     container.add(classOf[MyThing])
     container.add(classOf[ThingWithNoDependencies])
 
-    var myThing = container.resolveType(classOf[MyThing])
+    val myThing = container.resolveType(classOf[MyThing])
 
-    assertThat("1st level Dependency was not fulfilled", myThing.dependency, is(instanceOf(classOf[MyDependency])))
-    assertThat("2nd level Dependency was not fulfiled", myThing.dependency.dependency, is(instanceOf(classOf[ThingWithNoDependencies])))
+    withClue("1st level Dependency was not fulfilled") {
+      myThing.dependency should be(anInstanceOf[MyDependency])
+    }
+    withClue("2nd level Dependency was not fulfilled") {
+      myThing.dependency.dependency should be(anInstanceOf[ThingWithNoDependencies])
+    }
+
   }
 
-  @Test
-  def shouldResolveUsingConstructorWithMostDependencies {
+  test("shouldResolveUsingConstructorWithMostDependencies") {
     val container = new SimpleContainer
     container.add(classOf[MyThingWithReverseConstructor])
     container.add(classOf[ThingWithNoDependencies])
 
-    var myThing: MyThingWithReverseConstructor = container.resolveType(classOf[MyThingWithReverseConstructor])
+    val myThing: MyThingWithReverseConstructor = container.resolveType(classOf[MyThingWithReverseConstructor])
 
-    assertThat("Wrong constructor was used", myThing.dependency, is(notNullValue(classOf[Thing])))
-    assertThat(myThing.dependency, is(instanceOf(classOf[ThingWithNoDependencies])))
+    withClue("Wrong constructor was used") {
+      myThing.dependency should not be (null)
+    }
+
+    myThing.dependency should be(anInstanceOf[ThingWithNoDependencies])
   }
 }
 
 object SimpleContainerTest {
-  class Creator(container:SimpleContainer) extends Callable[Thing] {
+
+  class Creator(container: SimpleContainer) extends Callable[Thing] {
     def call = container.resolveType(classOf[Thing])
   }
 
@@ -242,4 +229,5 @@ object SimpleContainerTest {
   trait Thing {
     val dependency: Thing
   }
+
 }
