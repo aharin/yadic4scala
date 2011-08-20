@@ -29,16 +29,16 @@ class SimpleContainer(missingHandler: (Class[_]) => Object) extends Container {
     add(interface, () => createInstance(concrete))
   }
 
-  def add[A <: Object](aClass: Class[A], activator: () => A) {
+  def add[A <: Object](aClass: Class[A], provider: () => A) {
     activators.containsKey(aClass) match {
       case true => throw new ContainerException(aClass.getName + " already added to container")
-      case false => activators.put(aClass, new LazyActivator(activator))
+      case false => activators.put(aClass, new SingletonActivator(provider))
     }
   }
 
   def decorate[A <: Object, B <: A](interface: Class[A], concrete: Class[B]) {
     val existing = activators.get(interface)
-    activators.put(interface, new LazyActivator(() => createInstance(concrete, (aClass: Class[_]) => {
+    activators.put(interface, new SingletonActivator(() => createInstance(concrete, (aClass: Class[_]) => {
       if(aClass.equals(interface)) existing.activate() else resolve(aClass)
     })))
   }
