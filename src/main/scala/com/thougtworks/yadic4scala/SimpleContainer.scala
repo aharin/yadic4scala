@@ -4,7 +4,10 @@ import java.lang.Class
 import java.util.HashMap
 
 class SimpleContainer(missingHandler: (Class[_]) => Object) extends Container {
+
   def this() = this ((aClass:Class[_]) => {throw new ContainerException(aClass.getName + " not found in container")})
+
+  val defaultScope = Scopes.singleton
 
   val activators = new HashMap[Class[_], Activator]
 
@@ -22,23 +25,39 @@ class SimpleContainer(missingHandler: (Class[_]) => Object) extends Container {
   def resolveType[A <: Object]( aClass:Class[A] ): A = resolve(aClass).asInstanceOf[A]
 
   def add[C <: Object](concrete: Class[C]) {
-    add(concrete, () => createInstance(concrete))
+    add(concrete, defaultScope)
   }
             
   def add[I <: Object, C <: I](interface: Class[I], concrete: Class[C]) {
-    add(interface, () => createInstance(concrete))
+    add(interface, concrete, defaultScope)
   }
 
   def add[A <: Object](aClass: Class[A], provider: () => A) {
-    activators.containsKey(aClass) match {
-      case true => throw new ContainerException(aClass.getName + " already added to container")
-      case false => activators.put(aClass, new SingletonActivator(provider))
-    }
+    add(aClass, provider, defaultScope)
   }
 
   def decorate[A <: Object, B <: A](interface: Class[A], concrete: Class[B]) {
+    decorate(interface, concrete, defaultScope)
+  }
+
+  def add[C <: Object](concrete: Class[C], scope: Scope[C]) {
+    add(concrete, () => createInstance(concrete), scope)
+  }
+
+  def add[I <: Object, C <: I](interface: Class[I], concrete: Class[C], scope: Scope[I]) {
+    add(interface, () => createInstance(concrete), scope)
+  }
+
+  def add[A <: Object](aClass: Class[A], provider: () => A, scope: Scope[A]) {
+    activators.containsKey(aClass) match {
+      case true => throw new ContainerException(aClass.getName + " already added to container")
+      case false => activators.put(aClass, scope(provider))
+    }
+  }
+
+  def decorate[I <: Object, C <: I](interface: Class[I], concrete: Class[C], scope: Scope[I]) {
     val existing = activators.get(interface)
-    activators.put(interface, new SingletonActivator(() => createInstance(concrete, (aClass: Class[_]) => {
+    activators.put(interface, scope(() => createInstance(concrete, (aClass: Class[_]) => {
       if(aClass.equals(interface)) existing.activate() else resolve(aClass)
     })))
   }
