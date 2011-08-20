@@ -89,9 +89,8 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
       new ThingWithNoDependencies
     }, Scopes.singleton)
 
-    val thing1: Thing = container.resolveType(classOf[Thing])
-    val thing2: Thing = container.resolveType(classOf[Thing])
-    thing1 should be theSameInstanceAs thing2
+    container.resolveType(classOf[Thing])
+    container.resolveType(classOf[Thing])
     count should be(1)
   }
 
@@ -104,9 +103,8 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
       new ThingWithNoDependencies
     }, Scopes.prototype)
 
-    val thing1: Thing = container.resolveType(classOf[Thing])
-    val thing2: Thing = container.resolveType(classOf[Thing])
-    thing1 should not be(theSameInstanceAs(thing2))
+    container.resolveType(classOf[Thing])
+    container.resolveType(classOf[Thing])
     count should be(2)
   }
 
@@ -161,15 +159,26 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
     result should be(anInstanceOf[ThingWithNoDependencies])
   }
 
-  test("resolveShouldReturnSameInstanceWhenCalledTwice") {
+  test("resolveShouldReturnSameInstanceWhenCalledTwiceWhenRegisteredInSingletonScope") {
     val container = new SimpleContainer
-    container.add(classOf[ThingWithNoDependencies])
+    container.add(classOf[ThingWithNoDependencies], Scopes.singleton)
 
     val result1 = container.resolveType(classOf[ThingWithNoDependencies])
     val result2 = container.resolveType(classOf[ThingWithNoDependencies])
 
     result1 should be theSameInstanceAs result2
   }
+
+  test("resolveShouldReturnDifferentInstanceWhenCalledTwiceWhenRegisteredInPrototypeScope") {
+    val container = new SimpleContainer
+    container.add(classOf[ThingWithNoDependencies], Scopes.prototype)
+
+    val result1 = container.resolveType(classOf[ThingWithNoDependencies])
+    val result2 = container.resolveType(classOf[ThingWithNoDependencies])
+
+    result1 should not be theSameInstanceAs(result2)
+  }
+
   test("shouldResolveDependencies") {
     val container = new SimpleContainer
     container.add(classOf[MyDependency])

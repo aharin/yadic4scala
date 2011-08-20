@@ -7,7 +7,7 @@ class SimpleContainer(missingHandler: (Class[_]) => Object) extends Container {
 
   def this() = this ((aClass:Class[_]) => {throw new ContainerException(aClass.getName + " not found in container")})
 
-  val defaultScope = Scopes.singleton
+  val defaultScope = Scopes.prototype
 
   val activators = new HashMap[Class[_], Activator]
 
