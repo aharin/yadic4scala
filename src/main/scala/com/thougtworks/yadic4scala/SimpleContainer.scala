@@ -5,7 +5,9 @@ import java.util.HashMap
 
 class SimpleContainer(missingHandler: (Class[_]) => Object) extends Container {
 
-  def this() = this ((aClass:Class[_]) => {throw new ContainerException(aClass.getName + " not found in container")})
+  def this() = this ((aClass: Class[_]) => {
+    throw new ContainerException(aClass.getName + " not found in container")
+  })
 
   val defaultScope = Scopes.prototype
 
@@ -14,7 +16,7 @@ class SimpleContainer(missingHandler: (Class[_]) => Object) extends Container {
   def resolve(aClass: Class[_]): Object = {
     activators.get(aClass) match {
       case null => resolveMissing(aClass)
-      case activator:Activator => activator.activate()
+      case activator: Activator => activator.activate()
     }
   }
 
@@ -22,14 +24,14 @@ class SimpleContainer(missingHandler: (Class[_]) => Object) extends Container {
     missingHandler(aClass)
   }
 
-  def resolveType[A <: Object]( aClass:Class[A] ): A = resolve(aClass).asInstanceOf[A]
+  def resolveType[A <: Object](aClass: Class[A]): A = resolve(aClass).asInstanceOf[A]
 
   def add[C <: Object]()(implicit manifest: Manifest[C]) {
-    add(defaultScope)
+    add[C](defaultScope)
   }
-            
-  def add[I <: Object, C <: I](interface: Class[I], concrete: Class[C]) {
-    add(interface, concrete, defaultScope)
+
+  def add[I <: Object, C <: I]()(implicit manifestInterface: Manifest[I], manifestConcrete: Manifest[C]) {
+    add[I, C](defaultScope)
   }
 
   def add[A <: Object](aClass: Class[A], provider: () => A) {
@@ -40,12 +42,14 @@ class SimpleContainer(missingHandler: (Class[_]) => Object) extends Container {
     decorate(interface, concrete, defaultScope)
   }
 
-  def add[C <: Object](scope: Scope[C])(implicit manifest: Manifest[C]) {
-    val concrete = manifest.erasure.asInstanceOf[Class[C]]
+  def add[C <: Object](scope: Scope[C])(implicit manifestConcrete: Manifest[C]) {
+    val concrete = manifestConcrete.erasure.asInstanceOf[Class[C]]
     add(concrete, () => createInstance(concrete), scope)
   }
 
-  def add[I <: Object, C <: I](interface: Class[I], concrete: Class[C], scope: Scope[I]) {
+  def add[I <: Object, C <: I](scope: Scope[I])(implicit manifestInterface: Manifest[I], manifestConcrete: Manifest[C] ) {
+    val interface = manifestInterface.erasure.asInstanceOf[Class[I]]
+    val concrete = manifestConcrete.erasure.asInstanceOf[Class[C]]
     add(interface, () => createInstance(concrete), scope)
   }
 
@@ -59,20 +63,20 @@ class SimpleContainer(missingHandler: (Class[_]) => Object) extends Container {
   def decorate[I <: Object, C <: I](interface: Class[I], concrete: Class[C], scope: Scope[I]) {
     val existing = activators.get(interface)
     activators.put(interface, scope(() => createInstance(concrete, (aClass: Class[_]) => {
-      if(aClass.equals(interface)) existing.activate() else resolve(aClass)
+      if (aClass.equals(interface)) existing.activate() else resolve(aClass)
     })))
   }
 
   def createInstance[T <: Object](aClass: Class[T]): T = createInstance(aClass, resolve(_))
 
-  def createInstance[T <: Object](aClass: Class[T], resolver: (Class[_]) => Object ): T = {
+  def createInstance[T <: Object](aClass: Class[T], resolver: (Class[_]) => Object): T = {
     val constructors = aClass.getConstructors.toList.sortWith(_.getParameterTypes.length > _.getParameterTypes.length)
-    constructors.foreach( constructor => {
+    constructors.foreach(constructor => {
       try {
-        val instances = constructor.getParameterTypes.map( resolver(_) )
+        val instances = constructor.getParameterTypes.map(resolver(_))
         return constructor.newInstance(instances: _*).asInstanceOf[T]
       } catch {
-        case e:ContainerException =>
+        case e: ContainerException =>
       }
     })
     throw new ContainerException(aClass.getName + " does not have a satisfiable constructor")

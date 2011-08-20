@@ -51,7 +51,7 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
 
   test("shouldChainContainersThroughMissingAction") {
     val parent = new SimpleContainer
-    parent.add(classOf[Thing], classOf[ThingWithNoDependencies])
+    parent.add[Thing, ThingWithNoDependencies]()
 
     val child = new SimpleContainer(parent.resolve)
 
@@ -62,7 +62,7 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
 
   test("shouldResolveByType") {
     val container = new SimpleContainer
-    container.add(classOf[Thing], classOf[ThingWithNoDependencies])
+    container.add[Thing, ThingWithNoDependencies]()
 
     val thing = container.resolveType(classOf[Thing])
 
@@ -110,7 +110,7 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
 
   test("shouldDecorateAnExistingComponent") {
     val container = new SimpleContainer
-    container.add(classOf[Thing], classOf[ThingWithNoDependencies])
+    container.add[Thing, ThingWithNoDependencies]()
     container.decorate(classOf[Thing], classOf[DecoratedThing])
 
     val thing = container.resolveType(classOf[Thing])
@@ -129,7 +129,7 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
 
   test("shouldAddAndResolveByInterface") {
     val container = new SimpleContainer
-    container.add(classOf[Thing], classOf[ThingWithNoDependencies])
+    container.add[Thing, ThingWithNoDependencies]()
 
     val thing = container.resolveType(classOf[Thing])
 
