@@ -17,7 +17,7 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
     } should produce[ContainerException]
   }
 
-  test("shouldOnlyCallCreationLambdaOnceEvenFromDifferentThreads") {
+  test("shouldOnlyCallCreationLambdaOnceEvenFromDifferentThreadsWhenRegisteredInSingletonScope") {
     var count = 0
     val container = new SimpleContainer
 
@@ -25,7 +25,7 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
       count = count + 1
       Thread.sleep(10)
       new ThingWithNoDependencies
-    })
+    }, Scopes.singleton)
 
     val service = Executors.newFixedThreadPool(2)
 
@@ -80,18 +80,34 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
     wasCalled should be(true)
   }
 
-  test("shouldOnlyCallCreationLambdaOnce") {
+  test("shouldOnlyCallCreationLambdaOnceWhenRegisteredInSingletonScope") {
     var count = 0
     val container = new SimpleContainer
 
     container.add(classOf[Thing], () => {
       count = count + 1
       new ThingWithNoDependencies
-    })
+    }, Scopes.singleton)
 
-    container.resolveType(classOf[Thing])
-    container.resolveType(classOf[Thing])
+    val thing1: Thing = container.resolveType(classOf[Thing])
+    val thing2: Thing = container.resolveType(classOf[Thing])
+    thing1 should be theSameInstanceAs thing2
     count should be(1)
+  }
+
+  test("shouldOnlyCallCreationLambdaEveryTimeWhenRegisteredInPrototypeScope") {
+    var count = 0
+    val container = new SimpleContainer
+
+    container.add(classOf[Thing], () => {
+      count = count + 1
+      new ThingWithNoDependencies
+    }, Scopes.prototype)
+
+    val thing1: Thing = container.resolveType(classOf[Thing])
+    val thing2: Thing = container.resolveType(classOf[Thing])
+    thing1 should not be(theSameInstanceAs(thing2))
+    count should be(2)
   }
 
   test("shouldDecorateAnExistingComponent") {
