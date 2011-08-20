@@ -24,8 +24,8 @@ class SimpleContainer(missingHandler: (Class[_]) => Object) extends Container {
 
   def resolveType[A <: Object]( aClass:Class[A] ): A = resolve(aClass).asInstanceOf[A]
 
-  def add[C <: Object](concrete: Class[C]) {
-    add(concrete, defaultScope)
+  def add[C <: Object]()(implicit manifest: Manifest[C]) {
+    add(defaultScope)
   }
             
   def add[I <: Object, C <: I](interface: Class[I], concrete: Class[C]) {
@@ -40,7 +40,8 @@ class SimpleContainer(missingHandler: (Class[_]) => Object) extends Container {
     decorate(interface, concrete, defaultScope)
   }
 
-  def add[C <: Object](concrete: Class[C], scope: Scope[C]) {
+  def add[C <: Object](scope: Scope[C])(implicit manifest: Manifest[C]) {
+    val concrete = manifest.erasure.asInstanceOf[Class[C]]
     add(concrete, () => createInstance(concrete), scope)
   }
 
