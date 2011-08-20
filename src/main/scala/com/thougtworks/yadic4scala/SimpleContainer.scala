@@ -10,9 +10,13 @@ class SimpleContainer(missingHandler: (Class[_]) => Object) extends Container {
 
   def resolve(aClass: Class[_]): Object = {
     activators.get(aClass) match {
-      case null => missingHandler(aClass)
+      case null => resolveMissing(aClass)
       case activator:Activator => activator.activate()
     }
+  }
+
+  def resolveMissing(aClass: Class[_]) = {
+    missingHandler(aClass)
   }
 
   def resolveType[A <: Object]( aClass:Class[A] ): A = resolve(aClass).asInstanceOf[A]

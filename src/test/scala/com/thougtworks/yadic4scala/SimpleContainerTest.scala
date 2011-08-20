@@ -205,6 +205,13 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
 
     myThing.dependency should be(anInstanceOf[ThingWithNoDependencies])
   }
+
+  test("shouldResolveConcreteClassWithoutRegistration") {
+    val container = new AutoResolvingContainer()
+
+    val myThing = container.resolveType(classOf[MyThing])
+    myThing should not be (null)
+  }
 }
 
 object SimpleContainerTest {
