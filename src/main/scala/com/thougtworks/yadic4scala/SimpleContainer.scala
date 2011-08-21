@@ -34,8 +34,8 @@ class SimpleContainer(missingHandler: (Class[_]) => Object) extends Container {
     add[I, C](defaultScope)
   }
 
-  def add[A <: Object](aClass: Class[A], provider: () => A) {
-    add(aClass, provider, defaultScope)
+  def add[A <: Object](provider: () => A)(implicit manifest: Manifest[A]) {
+    add[A](provider, defaultScope)
   }
 
   def decorate[A <: Object, B <: A](interface: Class[A], concrete: Class[B]) {
@@ -44,16 +44,16 @@ class SimpleContainer(missingHandler: (Class[_]) => Object) extends Container {
 
   def add[C <: Object](scope: Scope[C])(implicit manifestConcrete: Manifest[C]) {
     val concrete = manifestConcrete.erasure.asInstanceOf[Class[C]]
-    add(concrete, () => createInstance(concrete), scope)
+    add[C](() => createInstance(concrete), scope)
   }
 
   def add[I <: Object, C <: I](scope: Scope[I])(implicit manifestInterface: Manifest[I], manifestConcrete: Manifest[C] ) {
-    val interface = manifestInterface.erasure.asInstanceOf[Class[I]]
     val concrete = manifestConcrete.erasure.asInstanceOf[Class[C]]
-    add(interface, () => createInstance(concrete), scope)
+    add[I](() => createInstance(concrete), scope)
   }
 
-  def add[A <: Object](aClass: Class[A], provider: () => A, scope: Scope[A]) {
+  def add[A <: Object](provider: () => A, scope: Scope[A])(implicit manifest: Manifest[A]) {
+    val aClass = manifest.erasure.asInstanceOf[Class[A]]
     activators.containsKey(aClass) match {
       case true => throw new ContainerException(aClass.getName + " already added to container")
       case false => activators.put(aClass, scope(provider))

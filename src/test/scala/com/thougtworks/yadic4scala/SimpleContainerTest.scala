@@ -21,7 +21,7 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
     var count = 0
     val container = new SimpleContainer
 
-    container.add(classOf[Thing], () => {
+    container.add[Thing]( () => {
       count = count + 1
       Thread.sleep(10)
       new ThingWithNoDependencies
@@ -84,7 +84,7 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
     var count = 0
     val container = new SimpleContainer
 
-    container.add(classOf[Thing], () => {
+    container.add[Thing]( () => {
       count = count + 1
       new ThingWithNoDependencies
     }, Scopes.singleton)
@@ -98,7 +98,7 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
     var count = 0
     val container = new SimpleContainer
 
-    container.add(classOf[Thing], () => {
+    container.add[Thing]( () => {
       count = count + 1
       new ThingWithNoDependencies
     }, Scopes.prototype)
@@ -121,7 +121,7 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
 
   test("shouldAddAndReolveByConcrete") {
     val container = new SimpleContainer
-    container.add(classOf[Thing], () => new ThingWithNoDependencies)
+    container.add[Thing](() => new ThingWithNoDependencies)
 
     val thing = container.resolveType(classOf[Thing])
     thing should be(anInstanceOf[ThingWithNoDependencies])
