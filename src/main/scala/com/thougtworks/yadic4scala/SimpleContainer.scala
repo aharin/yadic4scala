@@ -1,7 +1,7 @@
 package com.thougtworks.yadic4scala
 
 import java.lang.Class
-import java.util.HashMap
+import collection.mutable.Map
 
 class SimpleContainer(missingHandler: (Class[_]) => Object) extends Container {
 
@@ -11,12 +11,12 @@ class SimpleContainer(missingHandler: (Class[_]) => Object) extends Container {
 
   val defaultScope = Scopes.prototype
 
-  val activators = new HashMap[Class[_], Activator]
+  val activators = Map[Class[_], Activator]()
 
   def resolve(aClass: Class[_]): Object = {
     activators.get(aClass) match {
-      case null => resolveMissing(aClass)
-      case activator: Activator => activator.activate()
+      case None => resolveMissing(aClass)
+      case Some(activator: Activator) => activator.activate()
     }
   }
 
@@ -53,16 +53,16 @@ class SimpleContainer(missingHandler: (Class[_]) => Object) extends Container {
 
   def add[A <: Object](provider: () => A, scope: Scope[A])(implicit manifest: Manifest[A]) {
     val aClass = manifest.erasure.asInstanceOf[Class[A]]
-    activators.containsKey(aClass) match {
+    activators.contains(aClass) match {
       case true => throw new ContainerException(aClass.getName + " already added to container")
-      case false => activators.put(aClass, scope(provider))
+      case false => activators += (aClass -> scope(provider))
     }
   }
 
   def decorate[I <: Object, C <: I](scope: Scope[I])(implicit manifestInterface: Manifest[I], manifestConcrete: Manifest[C]) {
     val interface = manifestInterface.erasure.asInstanceOf[Class[I]]
-    val existing = activators.get(interface)
-    activators.put(interface, scope(() => createInstance[C]((aClass: Class[_]) => {
+    val existing = activators(interface)
+    activators += (interface -> scope(() => createInstance[C]((aClass: Class[_]) => {
       if (aClass.equals(interface)) existing.activate() else resolve(aClass)
     })))
   }
