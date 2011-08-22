@@ -5,6 +5,6 @@ import java.lang.Class
 class AutoResolvingContainer() extends SimpleContainer() {
 
   override def resolveMissing(aClass: Class[_]) = {
-    createInstance(aClass.asSubclass(classOf[Object]))
+    createInstance[Object]()(Manifest.classType(aClass))
   }
 }

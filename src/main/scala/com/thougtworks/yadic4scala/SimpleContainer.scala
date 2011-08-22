@@ -44,13 +44,11 @@ class SimpleContainer(missingHandler: (Class[_]) => Object) extends Container {
   }
 
   def add[C <: Object](scope: Scope[C])(implicit manifestConcrete: Manifest[C]) {
-    val concrete = manifestConcrete.erasure.asInstanceOf[Class[C]]
-    add[C](() => createInstance(concrete), scope)
+    add[C](() => createInstance[C](), scope)
   }
 
   def add[I <: Object, C <: I](scope: Scope[I])(implicit manifestInterface: Manifest[I], manifestConcrete: Manifest[C]) {
-    val concrete = manifestConcrete.erasure.asInstanceOf[Class[C]]
-    add[I](() => createInstance(concrete), scope)
+    add[I](() => createInstance[C](), scope)
   }
 
   def add[A <: Object](provider: () => A, scope: Scope[A])(implicit manifest: Manifest[A]) {
@@ -63,16 +61,16 @@ class SimpleContainer(missingHandler: (Class[_]) => Object) extends Container {
 
   def decorate[I <: Object, C <: I](scope: Scope[I])(implicit manifestInterface: Manifest[I], manifestConcrete: Manifest[C]) {
     val interface = manifestInterface.erasure.asInstanceOf[Class[I]]
-    val concrete = manifestConcrete.erasure.asInstanceOf[Class[C]]
     val existing = activators.get(interface)
-    activators.put(interface, scope(() => createInstance(concrete, (aClass: Class[_]) => {
+    activators.put(interface, scope(() => createInstance[C]((aClass: Class[_]) => {
       if (aClass.equals(interface)) existing.activate() else resolve(aClass)
     })))
   }
 
-  def createInstance[T <: Object](aClass: Class[T]): T = createInstance(aClass, resolve(_))
+  def createInstance[T <: Object]()(implicit manifestInterface: Manifest[T]): T = createInstance[T](resolve(_))
 
-  def createInstance[T <: Object](aClass: Class[T], resolver: (Class[_]) => Object): T = {
+  def createInstance[T <: Object](resolver: (Class[_]) => Object)(implicit manifestInterface: Manifest[T]): T = {
+    val aClass = manifest.erasure.asInstanceOf[Class[T]]
     val constructors = aClass.getConstructors.toList.sortWith(_.getParameterTypes.length > _.getParameterTypes.length)
     constructors.foreach(constructor => {
       try {
