@@ -16,5 +16,5 @@ trait Container {
 
 
   def resolve( aClass:Class[_] ): Object
-  def resolveType[A <: Object]( aClass:Class[A] ): A
+  def resolveType[A <: Object]()(implicit manifest: Manifest[A]): A
 }

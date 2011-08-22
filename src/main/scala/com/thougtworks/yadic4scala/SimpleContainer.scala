@@ -22,7 +22,10 @@ class SimpleContainer(missingHandler: (Class[_]) => Object) extends Container {
 
   def resolveMissing(aClass: Class[_]) = missingHandler(aClass)
 
-  def resolveType[A <: Object](aClass: Class[A]): A = resolve(aClass).asInstanceOf[A]
+  def resolveType[A <: Object]()(implicit manifest: Manifest[A]): A = {
+    val aClass = manifest.erasure.asInstanceOf[Class[A]]
+    resolve(aClass).asInstanceOf[A]
+  }
 
   def add[C <: Object]()(implicit manifest: Manifest[C]) {
     add[C](defaultScope)

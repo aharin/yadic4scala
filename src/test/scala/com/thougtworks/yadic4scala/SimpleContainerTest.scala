@@ -13,7 +13,7 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
     val container = new SimpleContainer
     container.add[MyThing]()
     evaluating {
-      container.resolve(classOf[MyThing])
+      container.resolveType[MyThing]()
     } should produce[ContainerException]
   }
 
@@ -44,7 +44,7 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
     val container = new SimpleContainer
     container.add[MyThingWithReverseConstructor]()
 
-    val myThing: MyThingWithReverseConstructor = container.resolveType(classOf[MyThingWithReverseConstructor])
+    val myThing: MyThingWithReverseConstructor = container.resolveType[MyThingWithReverseConstructor]()
 
     myThing.dependency should be(null)
   }
@@ -55,7 +55,7 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
 
     val child = new SimpleContainer(parent.resolve)
 
-    val thing = child.resolveType(classOf[Thing])
+    val thing = child.resolveType[Thing]()
 
     thing should be(anInstanceOf[ThingWithNoDependencies])
   }
@@ -64,7 +64,7 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
     val container = new SimpleContainer
     container.add[Thing, ThingWithNoDependencies]()
 
-    val thing = container.resolveType(classOf[Thing])
+    val thing = container.resolveType[Thing]()
 
     thing should be(anInstanceOf[ThingWithNoDependencies])
   }
@@ -75,7 +75,7 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
       wasCalled = true
       null
     })
-    container.resolveType(classOf[Thing])
+    container.resolveType[Thing]()
 
     wasCalled should be(true)
   }
@@ -89,8 +89,8 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
       new ThingWithNoDependencies
     }, Scopes.singleton)
 
-    container.resolveType(classOf[Thing])
-    container.resolveType(classOf[Thing])
+    container.resolveType[Thing]()
+    container.resolveType[Thing]()
     count should be(1)
   }
 
@@ -103,8 +103,8 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
       new ThingWithNoDependencies
     }, Scopes.prototype)
 
-    container.resolveType(classOf[Thing])
-    container.resolveType(classOf[Thing])
+    container.resolveType[Thing]()
+    container.resolveType[Thing]()
     count should be(2)
   }
 
@@ -113,7 +113,7 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
     container.add[Thing, ThingWithNoDependencies]()
     container.decorate[Thing, DecoratedThing]()
 
-    val thing = container.resolveType(classOf[Thing])
+    val thing = container.resolveType[Thing]()
 
     thing should be(anInstanceOf[DecoratedThing])
     thing.dependency should be(anInstanceOf[ThingWithNoDependencies])
@@ -123,7 +123,7 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
     val container = new SimpleContainer
     container.add[Thing](() => new ThingWithNoDependencies)
 
-    val thing = container.resolveType(classOf[Thing])
+    val thing = container.resolveType[Thing]()
     thing should be(anInstanceOf[ThingWithNoDependencies])
   }
 
@@ -131,7 +131,7 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
     val container = new SimpleContainer
     container.add[Thing, ThingWithNoDependencies]()
 
-    val thing = container.resolveType(classOf[Thing])
+    val thing = container.resolveType[Thing]()
 
     thing should be(anInstanceOf[ThingWithNoDependencies])
   }
@@ -147,7 +147,7 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
   test("resolveShouldThrowExceptionIfTypeNotInContainer") {
     val container = new SimpleContainer
     evaluating {
-      container.resolveType(classOf[MyThing])
+      container.resolveType[MyThing]()
     } should produce[ContainerException]
   }
 
@@ -155,7 +155,7 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
     val container = new SimpleContainer
     container.add[ThingWithNoDependencies]()
 
-    val result = container.resolveType(classOf[ThingWithNoDependencies])
+    val result = container.resolveType[ThingWithNoDependencies]()
     result should be(anInstanceOf[ThingWithNoDependencies])
   }
 
@@ -163,8 +163,8 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
     val container = new SimpleContainer
     container.add[ThingWithNoDependencies](Scopes.singleton)
 
-    val result1 = container.resolveType(classOf[ThingWithNoDependencies])
-    val result2 = container.resolveType(classOf[ThingWithNoDependencies])
+    val result1 = container.resolveType[ThingWithNoDependencies]()
+    val result2 = container.resolveType[ThingWithNoDependencies]()
 
     result1 should be theSameInstanceAs result2
   }
@@ -173,8 +173,8 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
     val container = new SimpleContainer
     container.add[ThingWithNoDependencies](Scopes.prototype)
 
-    val result1 = container.resolveType(classOf[ThingWithNoDependencies])
-    val result2 = container.resolveType(classOf[ThingWithNoDependencies])
+    val result1 = container.resolveType[ThingWithNoDependencies]()
+    val result2 = container.resolveType[ThingWithNoDependencies]()
 
     result1 should not be theSameInstanceAs(result2)
   }
@@ -184,7 +184,7 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
     container.add[MyDependency]()
     container.add[ThingWithNoDependencies]()
 
-    val myThing = container.resolveType(classOf[MyDependency])
+    val myThing = container.resolveType[MyDependency]()
     myThing should be(anInstanceOf[MyDependency])
   }
 
@@ -194,7 +194,7 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
     container.add[MyDependency]()
     container.add[ThingWithNoDependencies]()
 
-    val myThing = container.resolveType(classOf[MyThing])
+    val myThing = container.resolveType[MyThing]()
 
     myThing.dependency should be(anInstanceOf[MyDependency])
     myThing.dependency.dependency should be(anInstanceOf[ThingWithNoDependencies])
@@ -206,7 +206,7 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
     container.add[MyThing]()
     container.add[ThingWithNoDependencies]()
 
-    val myThing = container.resolveType(classOf[MyThing])
+    val myThing = container.resolveType[MyThing]()
 
     withClue("1st level Dependency was not fulfilled") {
       myThing.dependency should be(anInstanceOf[MyDependency])
@@ -222,7 +222,7 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
     container.add[MyThingWithReverseConstructor]()
     container.add[ThingWithNoDependencies]()
 
-    val myThing: MyThingWithReverseConstructor = container.resolveType(classOf[MyThingWithReverseConstructor])
+    val myThing: MyThingWithReverseConstructor = container.resolveType[MyThingWithReverseConstructor]()
 
     withClue("Wrong constructor was used") {
       myThing.dependency should not be (null)
@@ -234,7 +234,7 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
   test("shouldResolveConcreteClassWithoutRegistration") {
     val container = new AutoResolvingContainer()
 
-    val myThing = container.resolveType(classOf[MyThing])
+    val myThing = container.resolveType[MyThing]()
     myThing should not be (null)
   }
 }
@@ -242,7 +242,7 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
 object SimpleContainerTest {
 
   class Creator(container: SimpleContainer) extends Callable[Thing] {
-    def call = container.resolveType(classOf[Thing])
+    def call = container.resolveType[Thing]()
   }
 
   class MyThingWithReverseConstructor(val dependency: ThingWithNoDependencies) extends Thing {
