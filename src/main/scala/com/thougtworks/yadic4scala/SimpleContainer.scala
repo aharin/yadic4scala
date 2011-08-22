@@ -59,7 +59,7 @@ class SimpleContainer(missingHandler: (Class[_]) => Object) extends Container {
   }
 
   def decorate[I <: Object, C <: I](scope: Scope[I])(implicit manifestInterface: Manifest[I], manifestConcrete: Manifest[C]) {
-    val interface = manifestConcrete.erasure.asInstanceOf[Class[I]]
+    val interface = manifestInterface.erasure.asInstanceOf[Class[I]]
     val concrete = manifestConcrete.erasure.asInstanceOf[Class[C]]
     val existing = activators.get(interface)
     activators.put(interface, scope(() => createInstance(concrete, (aClass: Class[_]) => {
