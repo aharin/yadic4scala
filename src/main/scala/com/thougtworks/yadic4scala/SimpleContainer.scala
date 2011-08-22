@@ -20,9 +20,7 @@ class SimpleContainer(missingHandler: (Class[_]) => Object) extends Container {
     }
   }
 
-  def resolveMissing(aClass: Class[_]) = {
-    missingHandler(aClass)
-  }
+  def resolveMissing(aClass: Class[_]) = missingHandler(aClass)
 
   def resolveType[A <: Object](aClass: Class[A]): A = resolve(aClass).asInstanceOf[A]
 
@@ -38,8 +36,8 @@ class SimpleContainer(missingHandler: (Class[_]) => Object) extends Container {
     add[A](provider, defaultScope)
   }
 
-  def decorate[A <: Object, B <: A](interface: Class[A], concrete: Class[B]) {
-    decorate(interface, concrete, defaultScope)
+  def decorate[I <: Object, C <: I]()(implicit manifestInterface: Manifest[I], manifestConcrete: Manifest[C]) {
+    decorate[I, C](defaultScope)
   }
 
   def add[C <: Object](scope: Scope[C])(implicit manifestConcrete: Manifest[C]) {
@@ -47,7 +45,7 @@ class SimpleContainer(missingHandler: (Class[_]) => Object) extends Container {
     add[C](() => createInstance(concrete), scope)
   }
 
-  def add[I <: Object, C <: I](scope: Scope[I])(implicit manifestInterface: Manifest[I], manifestConcrete: Manifest[C] ) {
+  def add[I <: Object, C <: I](scope: Scope[I])(implicit manifestInterface: Manifest[I], manifestConcrete: Manifest[C]) {
     val concrete = manifestConcrete.erasure.asInstanceOf[Class[C]]
     add[I](() => createInstance(concrete), scope)
   }
@@ -60,7 +58,9 @@ class SimpleContainer(missingHandler: (Class[_]) => Object) extends Container {
     }
   }
 
-  def decorate[I <: Object, C <: I](interface: Class[I], concrete: Class[C], scope: Scope[I]) {
+  def decorate[I <: Object, C <: I](scope: Scope[I])(implicit manifestInterface: Manifest[I], manifestConcrete: Manifest[C]) {
+    val interface = manifestConcrete.erasure.asInstanceOf[Class[I]]
+    val concrete = manifestConcrete.erasure.asInstanceOf[Class[C]]
     val existing = activators.get(interface)
     activators.put(interface, scope(() => createInstance(concrete, (aClass: Class[_]) => {
       if (aClass.equals(interface)) existing.activate() else resolve(aClass)

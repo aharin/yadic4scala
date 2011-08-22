@@ -111,7 +111,7 @@ class SimpleContainerTest extends FunSuite with ShouldMatchers with CustomMatche
   test("shouldDecorateAnExistingComponent") {
     val container = new SimpleContainer
     container.add[Thing, ThingWithNoDependencies]()
-    container.decorate(classOf[Thing], classOf[DecoratedThing])
+    container.decorate[Thing, DecoratedThing]()
 
     val thing = container.resolveType(classOf[Thing])
 
